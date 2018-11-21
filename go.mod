@@ -1,1 +1,1 @@
-module fsm
+module github.com/dyrkin/fsm

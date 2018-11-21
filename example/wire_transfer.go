@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"fsm"
+
+	"github.com/dyrkin/fsm"
 )
 
 //states

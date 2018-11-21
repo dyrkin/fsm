@@ -15,7 +15,7 @@ These relations are interpreted as meaning:
 ```go
 import (
 	"fmt"
-	"fsm"
+	"github.com/dyrkin/fsm"
 )
 
 //states
