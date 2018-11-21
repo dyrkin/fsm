@@ -41,10 +41,10 @@ func newMachineData(currentTxTotal int, costOfCoffee int, coffeesLeft int) *Mach
 }
 
 func newCoffeeMachine() *FSM {
-	coffeeMachine := NewFSM()
-	coffeeMachine.StartWith(Open, newMachineData(0, 5, 1))
+	cm := NewFSM()
+	cm.StartWith(Open, newMachineData(0, 5, 1))
 
-	coffeeMachine.When(Open)(
+	cm.When(Open)(
 		func(event *Event) *NextState {
 			machineData, machineDataOk := event.data.(*MachineData)
 			deposit, depositOk := event.message.(*Deposit)
@@ -54,40 +54,40 @@ func newCoffeeMachine() *FSM {
 			_, getCostOfCoffeeOk := event.message.(*GetCostOfCoffee)
 			switch {
 			case machineDataOk && machineData.coffeesLeft <= 0:
-				return coffeeMachine.Goto(PoweredOff)
+				return cm.Goto(PoweredOff)
 
 			case depositOk && machineDataOk && (deposit.value+machineData.currentTxTotal >= machineData.costOfCoffee):
 				txTotal := machineData.currentTxTotal + deposit.value
 				newData := newMachineData(txTotal, machineData.costOfCoffee, machineData.coffeesLeft)
-				return coffeeMachine.Goto(ReadyToBuy).With(newData)
+				return cm.Goto(ReadyToBuy).With(newData)
 
 			case depositOk && machineDataOk && (deposit.value+machineData.currentTxTotal < machineData.costOfCoffee):
 				txTotal := machineData.currentTxTotal + deposit.value
 				newData := newMachineData(txTotal, machineData.costOfCoffee, machineData.coffeesLeft)
-				return coffeeMachine.Stay().With(newData)
+				return cm.Stay().With(newData)
 
 			case setNumberOfCoffeeOk && machineDataOk:
 				fmt.Printf("Set new number of coffee: %d\n", setNumberOfCoffee.quantity)
 				newData := newMachineData(machineData.currentTxTotal, machineData.costOfCoffee, setNumberOfCoffee.quantity)
-				return coffeeMachine.Stay().With(newData)
+				return cm.Stay().With(newData)
 
 			case getNumberOfCoffeeOk && machineDataOk:
 				fmt.Printf("Coffees left: %d\n", machineData.coffeesLeft)
-				return coffeeMachine.Stay()
+				return cm.Stay()
 
 			case setCostOfCoffeeOk && machineDataOk:
 				fmt.Printf("Set new coffee price: %d\n", setCostOfCoffee.price)
 				newData := newMachineData(machineData.currentTxTotal, setCostOfCoffee.price, machineData.coffeesLeft)
-				return coffeeMachine.Stay().With(newData)
+				return cm.Stay().With(newData)
 
 			case getCostOfCoffeeOk && machineDataOk:
 				fmt.Printf("Cost of coffee: %d\n", machineData.costOfCoffee)
-				return coffeeMachine.Stay()
+				return cm.Stay()
 			}
-			return coffeeMachine.DefaultHandler()(event)
+			return cm.DefaultHandler()(event)
 		})
 
-	coffeeMachine.When(ReadyToBuy)(
+	cm.When(ReadyToBuy)(
 		func(event *Event) *NextState {
 			machineData, machineDataOk := event.data.(*MachineData)
 			_, brewCoffeeOk := event.message.(*BrewCoffee)
@@ -96,25 +96,25 @@ func newCoffeeMachine() *FSM {
 				if balanceToBeDispensed > 0 {
 					fmt.Printf("Balance to be dispensed is %d\n", balanceToBeDispensed)
 					newData := newMachineData(0, machineData.costOfCoffee, machineData.coffeesLeft-1)
-					return coffeeMachine.Goto(Open).With(newData)
+					return cm.Goto(Open).With(newData)
 				}
 				newData := newMachineData(0, machineData.costOfCoffee, machineData.coffeesLeft-1)
-				return coffeeMachine.Goto(Open).With(newData)
+				return cm.Goto(Open).With(newData)
 			}
-			return coffeeMachine.DefaultHandler()(event)
+			return cm.DefaultHandler()(event)
 		})
 
-	coffeeMachine.When(PoweredOff)(
+	cm.When(PoweredOff)(
 		func(event *Event) *NextState {
 			_, startUpMachineOk := event.message.(*StartUpMachine)
 			if startUpMachineOk {
-				return coffeeMachine.Goto(Open)
+				return cm.Goto(Open)
 			}
 			fmt.Printf("Machine Powered down.  Please start machine first with StartUpMachine")
-			return coffeeMachine.Stay()
+			return cm.Stay()
 		})
 
-	coffeeMachine.SetDefaultHandler(
+	cm.SetDefaultHandler(
 		func(event *Event) *NextState {
 			_, shutDownMachineOk := event.message.(*ShutDownMachine)
 			_, cancelOk := event.message.(*Cancel)
@@ -124,16 +124,16 @@ func newCoffeeMachine() *FSM {
 			case shutDownMachineOk && machineDataOk:
 				fmt.Printf("Balance is: %d\n", machineData.currentTxTotal)
 				newData := newMachineData(0, machineData.costOfCoffee, machineData.coffeesLeft)
-				return coffeeMachine.Goto(PoweredOff).With(newData)
+				return cm.Goto(PoweredOff).With(newData)
 			case cancelOk && machineDataOk:
 				fmt.Printf("Balance is: %d\n", machineData.currentTxTotal)
 				newData := newMachineData(0, machineData.costOfCoffee, machineData.coffeesLeft)
-				return coffeeMachine.Goto(Open).With(newData)
+				return cm.Goto(Open).With(newData)
 			}
 			panic("Something went wrong")
 		})
 
-	coffeeMachine.OnTransition(
+	cm.OnTransition(
 		func(from State, to State) {
 			switch {
 			case from == Open && to == ReadyToBuy:
@@ -143,7 +143,7 @@ func newCoffeeMachine() *FSM {
 			}
 		})
 
-	return coffeeMachine
+	return cm
 }
 
 func TestCoffeeMachine(t *testing.T) {

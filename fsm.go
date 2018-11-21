@@ -1,39 +1,21 @@
 package fsm
 
 import (
-	"fmt"
 	"sync"
 )
 
-type Event struct {
-	message interface{}
-	data    interface{}
-}
-
 type State string
+
 type Data interface{}
 
+type Event struct {
+	message interface{}
+	data    Data
+}
+
 type NextState struct {
-	state Option
-	data  Data
-}
-
-type None struct{}
-
-type Some struct {
 	state State
-}
-
-type Option interface {
-	Value() State
-}
-
-func (o *Some) Value() State {
-	return o.state
-}
-
-func (o *None) Value() State {
-	return "end"
+	data  Data
 }
 
 type stateFunction func(event *Event) *NextState
@@ -46,8 +28,6 @@ type FSM struct {
 	stateFunctions     map[State]stateFunction
 	transitionFunction func(from State, to State)
 	mutex              *sync.Mutex
-	completed          bool
-	asyncEventQueue    chan *Event
 	defaultHandler     stateFunction
 }
 
@@ -56,7 +36,6 @@ func NewFSM() *FSM {
 		stateFunctions:     map[State]stateFunction{},
 		mutex:              &sync.Mutex{},
 		transitionFunction: func(from State, to State) {},
-		asyncEventQueue:    make(chan *Event),
 		defaultHandler: func(event *Event) *NextState {
 			panic("Default handler is not defined")
 		},
@@ -75,7 +54,6 @@ func (fsm *FSM) SetDefaultHandler(defaultHandler stateFunction) {
 }
 
 func (fsm *FSM) StartWith(state State, data Data) {
-	fsm.completed = false
 	fsm.initialState = state
 	fsm.initialData = data
 	fsm.currentState = state
@@ -86,9 +64,6 @@ func (fsm *FSM) Send(message interface{}) {
 	mutex := fsm.mutex
 	mutex.Lock()
 	defer mutex.Unlock()
-	if fsm.completed {
-		panic("FSM reached its final state. Call Init() to reinitialize FSM")
-	}
 	currentState := fsm.currentState
 	stateFunction := fsm.stateFunctions[currentState]
 	nextState := stateFunction(&Event{message, fsm.currentData})
@@ -96,28 +71,17 @@ func (fsm *FSM) Send(message interface{}) {
 }
 
 func (fsm *FSM) makeTransition(nextState *NextState) {
-	fsm.transitionFunction(fsm.currentState, nextState.state.Value())
-	switch s := nextState.state.(type) {
-	case *Some:
-		fmt.Printf("Transition from %q to %q\n", fsm.currentState, s.Value())
-		fsm.currentState = s.Value()
-	default:
-		fmt.Printf("Transition from %q to %q\n", fsm.currentState, s.Value())
-		fsm.completed = true
-	}
+	fsm.transitionFunction(fsm.currentState, nextState.state)
+	fsm.currentState = nextState.state
 	fsm.currentData = nextState.data
 }
 
 func (fsm *FSM) Goto(state State) *NextState {
-	return &NextState{state: &Some{state}, data: fsm.currentData}
+	return &NextState{state: state, data: fsm.currentData}
 }
 
 func (fsm *FSM) Stay() *NextState {
-	return &NextState{state: &Some{fsm.currentState}, data: fsm.currentData}
-}
-
-func (fsm *FSM) End() *NextState {
-	return &NextState{state: &None{}, data: fsm.currentData}
+	return &NextState{state: fsm.currentState, data: fsm.currentData}
 }
 
 func (fsm *FSM) DefaultHandler() stateFunction {

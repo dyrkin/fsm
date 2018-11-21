@@ -1,6 +1,4 @@
-user.yml
 .DS_Store
 go.sum
 .vscode/
 fsm
-*.log
