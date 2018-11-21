@@ -1,4 +1,6 @@
-### Overview
+# Finite State Machine for Go
+
+## Overview
 
 The FSM (Finite State Machine) is best described in the [Erlang design principles](http://www.erlang.org/documentation/doc-4.8.2/doc/design_principles/fsm.html)
 
@@ -8,7 +10,7 @@ A FSM can be described as a set of relations of the form:
 These relations are interpreted as meaning:
 > If we are in state S and the event E occurs, we should perform the actions A and make a transition to the state S'.
 
-### A Simple Example
+## A Simple Example
 
 ```go
 import (
@@ -49,12 +51,9 @@ func newWireTransfer(transferred chan bool) *fsm.FSM {
 		func(event *fsm.Event) *fsm.NextState {
 			transfer, transferOk := event.Message.(*Transfer)
 			if transferOk && event.Data == nil {
-				withdrawFrom := transfer.source
-				transferTo := transfer.target
-				amount := transfer.amount
-				transfer.source <- amount
+				transfer.source <- transfer.amount
 				return wt.Goto(AwaitFromState).With(
-					&WireTransferData{withdrawFrom, transferTo, amount, wt},
+					&WireTransferData{transfer.source, transfer.target, transfer.amount, wt},
 				)
 			}
 			return wt.DefaultHandler()(event)
@@ -94,7 +93,7 @@ func newWireTransfer(transferred chan bool) *fsm.FSM {
 }
 ```
 
-The code is pretty self explanatory. The state machine will start in the Initial state with all values uninitialised. The only type of message which can be received in the Initial state is the initial Transfer request at which point a withdraw amount is sent to the source account and the state machine transitions to the AwaitFrom state.
+The code is pretty self explanatory. The state machine will start in the Initial state with all values uninitialized. The only type of message which can be received in the Initial state is the initial Transfer request at which point a withdraw amount is sent to the source account and the state machine transitions to the AwaitFrom state.
 
 When the system is in the AwaitFrom state the only two messages that can be received are Done or Failure from the source account. If the Done business acknowledgement is received the system will send a deposit amount to the target account and transition to the AwaitTo state.
 
@@ -141,7 +140,6 @@ func main() {
 ```
 
 It will produce the following output:
-
 
 > Withdrawn from source account: 30  
 ToppedUp target account: 30  

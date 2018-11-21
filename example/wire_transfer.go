@@ -38,12 +38,9 @@ func newWireTransfer(transferred chan bool) *fsm.FSM {
 		func(event *fsm.Event) *fsm.NextState {
 			transfer, transferOk := event.Message.(*Transfer)
 			if transferOk && event.Data == nil {
-				withdrawFrom := transfer.source
-				transferTo := transfer.target
-				amount := transfer.amount
-				transfer.source <- amount
+				transfer.source <- transfer.amount
 				return wt.Goto(AwaitFromState).With(
-					&WireTransferData{withdrawFrom, transferTo, amount, wt},
+					&WireTransferData{transfer.source, transfer.target, transfer.amount, wt},
 				)
 			}
 			return wt.DefaultHandler()(event)
