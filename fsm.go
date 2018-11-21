@@ -1,6 +1,7 @@
 package fsm
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -9,8 +10,8 @@ type State string
 type Data interface{}
 
 type Event struct {
-	message interface{}
-	data    Data
+	Message interface{}
+	Data    Data
 }
 
 type NextState struct {
@@ -42,6 +43,17 @@ func NewFSM() *FSM {
 	}
 }
 
+func (fsm *FSM) StartWith(state State, data Data) {
+	fsm.initialState = state
+	fsm.initialData = data
+	fsm.currentState = state
+	fsm.currentData = data
+}
+
+func (fsm *FSM) Init() {
+	fsm.StartWith(fsm.initialState, fsm.initialData)
+}
+
 func (fsm *FSM) When(state State) func(stateFunction) *FSM {
 	return func(f stateFunction) *FSM {
 		fsm.stateFunctions[state] = f
@@ -53,11 +65,10 @@ func (fsm *FSM) SetDefaultHandler(defaultHandler stateFunction) {
 	fsm.defaultHandler = defaultHandler
 }
 
-func (fsm *FSM) StartWith(state State, data Data) {
-	fsm.initialState = state
-	fsm.initialData = data
-	fsm.currentState = state
-	fsm.currentData = data
+func makeTransition(fsm *FSM, nextState *NextState) {
+	fsm.transitionFunction(fsm.currentState, nextState.state)
+	fsm.currentState = nextState.state
+	fsm.currentData = nextState.data
 }
 
 func (fsm *FSM) Send(message interface{}) {
@@ -67,34 +78,27 @@ func (fsm *FSM) Send(message interface{}) {
 	currentState := fsm.currentState
 	stateFunction := fsm.stateFunctions[currentState]
 	nextState := stateFunction(&Event{message, fsm.currentData})
-	fsm.makeTransition(nextState)
-}
-
-func (fsm *FSM) makeTransition(nextState *NextState) {
-	fsm.transitionFunction(fsm.currentState, nextState.state)
-	fsm.currentState = nextState.state
-	fsm.currentData = nextState.data
+	makeTransition(fsm, nextState)
 }
 
 func (fsm *FSM) Goto(state State) *NextState {
-	return &NextState{state: state, data: fsm.currentData}
+	if _, ok := fsm.stateFunctions[state]; ok {
+		return &NextState{state: state, data: fsm.currentData}
+	}
+	panic(fmt.Sprintf("Unknown state: %q", state))
 }
 
 func (fsm *FSM) Stay() *NextState {
 	return &NextState{state: fsm.currentState, data: fsm.currentData}
 }
 
-func (fsm *FSM) DefaultHandler() stateFunction {
-	return fsm.defaultHandler
-}
-
-func (fsm *FSM) Init() {
-	fsm.StartWith(fsm.initialState, fsm.initialData)
-}
-
 func (ns *NextState) With(data Data) *NextState {
 	ns.data = data
 	return ns
+}
+
+func (fsm *FSM) DefaultHandler() stateFunction {
+	return fsm.defaultHandler
 }
 
 func (fsm *FSM) OnTransition(f func(from State, to State)) {

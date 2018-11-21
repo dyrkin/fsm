@@ -46,12 +46,12 @@ func newCoffeeMachine() *FSM {
 
 	cm.When(Open)(
 		func(event *Event) *NextState {
-			machineData, machineDataOk := event.data.(*MachineData)
-			deposit, depositOk := event.message.(*Deposit)
-			setNumberOfCoffee, setNumberOfCoffeeOk := event.message.(*SetNumberOfCoffee)
-			_, getNumberOfCoffeeOk := event.message.(*GetNumberOfCoffee)
-			setCostOfCoffee, setCostOfCoffeeOk := event.message.(*SetCostOfCoffee)
-			_, getCostOfCoffeeOk := event.message.(*GetCostOfCoffee)
+			machineData, machineDataOk := event.Data.(*MachineData)
+			deposit, depositOk := event.Message.(*Deposit)
+			setNumberOfCoffee, setNumberOfCoffeeOk := event.Message.(*SetNumberOfCoffee)
+			_, getNumberOfCoffeeOk := event.Message.(*GetNumberOfCoffee)
+			setCostOfCoffee, setCostOfCoffeeOk := event.Message.(*SetCostOfCoffee)
+			_, getCostOfCoffeeOk := event.Message.(*GetCostOfCoffee)
 			switch {
 			case machineDataOk && machineData.coffeesLeft <= 0:
 				return cm.Goto(PoweredOff)
@@ -89,8 +89,8 @@ func newCoffeeMachine() *FSM {
 
 	cm.When(ReadyToBuy)(
 		func(event *Event) *NextState {
-			machineData, machineDataOk := event.data.(*MachineData)
-			_, brewCoffeeOk := event.message.(*BrewCoffee)
+			machineData, machineDataOk := event.Data.(*MachineData)
+			_, brewCoffeeOk := event.Message.(*BrewCoffee)
 			if brewCoffeeOk && machineDataOk {
 				balanceToBeDispensed := machineData.currentTxTotal - machineData.costOfCoffee
 				if balanceToBeDispensed > 0 {
@@ -106,7 +106,7 @@ func newCoffeeMachine() *FSM {
 
 	cm.When(PoweredOff)(
 		func(event *Event) *NextState {
-			_, startUpMachineOk := event.message.(*StartUpMachine)
+			_, startUpMachineOk := event.Message.(*StartUpMachine)
 			if startUpMachineOk {
 				return cm.Goto(Open)
 			}
@@ -116,9 +116,9 @@ func newCoffeeMachine() *FSM {
 
 	cm.SetDefaultHandler(
 		func(event *Event) *NextState {
-			_, shutDownMachineOk := event.message.(*ShutDownMachine)
-			_, cancelOk := event.message.(*Cancel)
-			machineData, machineDataOk := event.data.(*MachineData)
+			_, shutDownMachineOk := event.Message.(*ShutDownMachine)
+			_, cancelOk := event.Message.(*Cancel)
+			machineData, machineDataOk := event.Data.(*MachineData)
 
 			switch {
 			case shutDownMachineOk && machineDataOk:
