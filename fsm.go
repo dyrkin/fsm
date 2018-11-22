@@ -72,9 +72,8 @@ func makeTransition(fsm *FSM, nextState *NextState) {
 }
 
 func (fsm *FSM) Send(message interface{}) {
-	mutex := fsm.mutex
-	mutex.Lock()
-	defer mutex.Unlock()
+	fsm.mutex.Lock()
+	defer fsm.mutex.Unlock()
 	currentState := fsm.currentState
 	stateFunction := fsm.stateFunctions[currentState]
 	nextState := stateFunction(&Event{message, fsm.currentData})

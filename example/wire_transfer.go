@@ -6,6 +6,8 @@ import (
 	"github.com/dyrkin/fsm"
 )
 
+//the code is taken from http://cloudmark.github.io/FSM/
+
 //states
 const InitialState = "Initial"
 const AwaitFromState = "AwaitFrom"

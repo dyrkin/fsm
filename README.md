@@ -95,7 +95,13 @@ func newWireTransfer(transferred chan bool) *fsm.FSM {
 }
 ```
 
-The code is pretty self explanatory. The state machine will start in the Initial state with all values uninitialized. The only type of message which can be received in the Initial state is the initial Transfer request at which point a withdraw amount is sent to the source account and the state machine transitions to the AwaitFrom state.
+The basic strategy is to instantiate FSM and specifying the possible states:
+
+* `NewFSM()` instantiates new FSM
+* `StartWith()` defines the initial state and initial data
+* Then there is one `When(<state>)(<event handler fn>)` declaration per state to be handled.
+
+In this case will start in the Initial state with all values uninitialized. The only type of message which can be received in the Initial state is the initial Transfer request at which point a withdraw amount is sent to the source account and the state machine transitions to the AwaitFrom state.
 
 When the system is in the AwaitFrom state the only two messages that can be received are Done or Failure from the source account. If the Done business acknowledgement is received the system will send a deposit amount to the target account and transition to the AwaitTo state.
 
