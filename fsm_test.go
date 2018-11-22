@@ -5,6 +5,8 @@ import (
 	"testing"
 )
 
+//the code is taken from https://github.com/arunma/AkkaFSM/blob/master/src/test/scala/me/rerun/akka/fsm/CoffeeSpec.scala
+
 var Open State = "Open"
 var ReadyToBuy State = "ReadyToBuy"
 var PoweredOff State = "PoweredOff"

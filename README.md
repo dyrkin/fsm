@@ -12,6 +12,8 @@ These relations are interpreted as meaning:
 
 ## A Simple Example
 
+The code is taken from the article [Akka Finite State Machine (FSM) and At Most Once Semantics](http://cloudmark.github.io/FSM/)
+
 ```go
 import (
 	"fmt"
