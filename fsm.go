@@ -19,22 +19,22 @@ type NextState struct {
 	data  Data
 }
 
-type stateFunction func(event *Event) *NextState
+type StateFunction func(event *Event) *NextState
 
 type FSM struct {
 	initialState       State
 	initialData        Data
 	currentState       State
 	currentData        Data
-	stateFunctions     map[State]stateFunction
+	stateFunctions     map[State]StateFunction
 	transitionFunction func(from State, to State)
 	mutex              *sync.Mutex
-	defaultHandler     stateFunction
+	defaultHandler     StateFunction
 }
 
 func NewFSM() *FSM {
 	return &FSM{
-		stateFunctions:     map[State]stateFunction{},
+		stateFunctions:     map[State]StateFunction{},
 		mutex:              &sync.Mutex{},
 		transitionFunction: func(from State, to State) {},
 		defaultHandler: func(event *Event) *NextState {
@@ -54,14 +54,14 @@ func (fsm *FSM) Init() {
 	fsm.StartWith(fsm.initialState, fsm.initialData)
 }
 
-func (fsm *FSM) When(state State) func(stateFunction) *FSM {
-	return func(f stateFunction) *FSM {
+func (fsm *FSM) When(state State) func(StateFunction) *FSM {
+	return func(f StateFunction) *FSM {
 		fsm.stateFunctions[state] = f
 		return fsm
 	}
 }
 
-func (fsm *FSM) SetDefaultHandler(defaultHandler stateFunction) {
+func (fsm *FSM) SetDefaultHandler(defaultHandler StateFunction) {
 	fsm.defaultHandler = defaultHandler
 }
 
@@ -96,7 +96,7 @@ func (ns *NextState) With(data Data) *NextState {
 	return ns
 }
 
-func (fsm *FSM) DefaultHandler() stateFunction {
+func (fsm *FSM) DefaultHandler() StateFunction {
 	return fsm.defaultHandler
 }
 
