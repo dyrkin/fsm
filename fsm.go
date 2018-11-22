@@ -106,9 +106,13 @@ func (fsm *FSM) OnTransition(f func(from State, to State)) {
 }
 
 func (fsm *FSM) CurrentState() State {
+	fsm.mutex.Lock()
+	defer fsm.mutex.Unlock()
 	return fsm.currentState
 }
 
 func (fsm *FSM) CurrentData() Data {
+	fsm.mutex.Lock()
+	defer fsm.mutex.Unlock()
 	return fsm.currentData
 }

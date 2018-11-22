@@ -235,4 +235,51 @@ func TestCoffeeMachine(t *testing.T) {
 	if machineData.currentTxTotal != 0 {
 		t.Errorf("Deposit is not 0. Deposit: %d", machineData.currentTxTotal)
 	}
+
+	//should transition to PoweredOff state if the machine is shut down from ReadyToBuyState
+	coffeeMachine = newCoffeeMachine()
+	coffeeMachine.Send(&SetCostOfCoffee{5})
+	coffeeMachine.Send(&SetNumberOfCoffee{10})
+
+	if coffeeMachine.CurrentState() != Open {
+		t.Errorf("Current state is not Open. State: %s", coffeeMachine.CurrentState())
+	}
+
+	coffeeMachine.Send(&Deposit{2})
+	coffeeMachine.Send(&Deposit{2})
+	coffeeMachine.Send(&Deposit{2})
+
+	if coffeeMachine.CurrentState() != ReadyToBuy {
+		t.Errorf("Current state is not ReadyToBuy. State: %s", coffeeMachine.CurrentState())
+	}
+
+	coffeeMachine.Send(&ShutDownMachine{})
+
+	if coffeeMachine.CurrentState() != PoweredOff {
+		t.Errorf("Current state is not PoweredOff. State: %s", coffeeMachine.CurrentState())
+	}
+
+	machineData = coffeeMachine.CurrentData().(*MachineData)
+
+	if machineData.currentTxTotal != 0 {
+		t.Errorf("Deposit is not 0. Deposit: %d", machineData.currentTxTotal)
+	}
+
+	//should open the machine to operation if powered on
+	coffeeMachine = newCoffeeMachine()
+	coffeeMachine.Send(&SetCostOfCoffee{5})
+	coffeeMachine.Send(&SetNumberOfCoffee{10})
+
+	if coffeeMachine.CurrentState() != Open {
+		t.Errorf("Current state is not Open. State: %s", coffeeMachine.CurrentState())
+	}
+
+	coffeeMachine.Send(&Deposit{2})
+	coffeeMachine.Send(&Deposit{2})
+
+	coffeeMachine.Send(&ShutDownMachine{})
+
+	if coffeeMachine.CurrentState() != PoweredOff {
+		t.Errorf("Current state is not PoweredOff. State: %s", coffeeMachine.CurrentState())
+	}
 }
